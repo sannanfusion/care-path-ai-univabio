@@ -16,6 +16,8 @@ import { Route as SavedRouteImport } from './routes/saved'
 import { Route as SymptomCheckRouteImport } from './routes/symptom-check'
 import { Route as ApiPhotoRouteImport } from './routes/api/photo'
 import { Route as ProviderPlaceIdRouteImport } from './routes/provider.$placeId'
+import { Route as ApiVoiceSpeakRouteImport } from './routes/api/voice/speak'
+import { Route as ApiVoiceTranscribeRouteImport } from './routes/api/voice/transcribe'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -52,6 +54,16 @@ const ProviderPlaceIdRoute = ProviderPlaceIdRouteImport.update({
   path: '/provider/$placeId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiVoiceSpeakRoute = ApiVoiceSpeakRouteImport.update({
+  id: '/api/voice/speak',
+  path: '/api/voice/speak',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiVoiceTranscribeRoute = ApiVoiceTranscribeRouteImport.update({
+  id: '/api/voice/transcribe',
+  path: '/api/voice/transcribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -61,6 +73,8 @@ export interface FileRoutesByFullPath {
   '/symptom-check': typeof SymptomCheckRoute
   '/api/photo': typeof ApiPhotoRoute
   '/provider/$placeId': typeof ProviderPlaceIdRoute
+  '/api/voice/speak': typeof ApiVoiceSpeakRoute
+  '/api/voice/transcribe': typeof ApiVoiceTranscribeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -70,6 +84,8 @@ export interface FileRoutesByTo {
   '/symptom-check': typeof SymptomCheckRoute
   '/api/photo': typeof ApiPhotoRoute
   '/provider/$placeId': typeof ProviderPlaceIdRoute
+  '/api/voice/speak': typeof ApiVoiceSpeakRoute
+  '/api/voice/transcribe': typeof ApiVoiceTranscribeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,6 +96,8 @@ export interface FileRoutesById {
   '/symptom-check': typeof SymptomCheckRoute
   '/api/photo': typeof ApiPhotoRoute
   '/provider/$placeId': typeof ProviderPlaceIdRoute
+  '/api/voice/speak': typeof ApiVoiceSpeakRoute
+  '/api/voice/transcribe': typeof ApiVoiceTranscribeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +109,8 @@ export interface FileRouteTypes {
     | '/symptom-check'
     | '/api/photo'
     | '/provider/$placeId'
+    | '/api/voice/speak'
+    | '/api/voice/transcribe'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,6 +120,8 @@ export interface FileRouteTypes {
     | '/symptom-check'
     | '/api/photo'
     | '/provider/$placeId'
+    | '/api/voice/speak'
+    | '/api/voice/transcribe'
   id:
     | '__root__'
     | '/'
@@ -109,6 +131,8 @@ export interface FileRouteTypes {
     | '/symptom-check'
     | '/api/photo'
     | '/provider/$placeId'
+    | '/api/voice/speak'
+    | '/api/voice/transcribe'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -119,6 +143,8 @@ export interface RootRouteChildren {
   SymptomCheckRoute: typeof SymptomCheckRoute
   ApiPhotoRoute: typeof ApiPhotoRoute
   ProviderPlaceIdRoute: typeof ProviderPlaceIdRoute
+  ApiVoiceSpeakRoute: typeof ApiVoiceSpeakRoute
+  ApiVoiceTranscribeRoute: typeof ApiVoiceTranscribeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -172,6 +198,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProviderPlaceIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/voice/speak': {
+      id: '/api/voice/speak'
+      path: '/api/voice/speak'
+      fullPath: '/api/voice/speak'
+      preLoaderRoute: typeof ApiVoiceSpeakRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/voice/transcribe': {
+      id: '/api/voice/transcribe'
+      path: '/api/voice/transcribe'
+      fullPath: '/api/voice/transcribe'
+      preLoaderRoute: typeof ApiVoiceTranscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -183,6 +223,8 @@ const rootRouteChildren: RootRouteChildren = {
   SymptomCheckRoute: SymptomCheckRoute,
   ApiPhotoRoute: ApiPhotoRoute,
   ProviderPlaceIdRoute: ProviderPlaceIdRoute,
+  ApiVoiceSpeakRoute: ApiVoiceSpeakRoute,
+  ApiVoiceTranscribeRoute: ApiVoiceTranscribeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
