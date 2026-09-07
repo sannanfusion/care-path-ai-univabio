@@ -42,6 +42,7 @@ const STARTERS = [
 function SymptomCheckPage() {
   const navigate = useNavigate();
   const call = useServerFn(triageTurn);
+  const [isReady, setIsReady] = useState(false);
   const [messages, setMessages] = useState<ChatTurn[]>([{ role: "assistant", content: OPENING }]);
   const [quickReplies, setQuickReplies] = useState<string[]>([]);
   const [assessment, setLocalAssessment] = useState<Assessment | null>(null);
@@ -49,6 +50,10 @@ function SymptomCheckPage() {
   const [error, setError] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
   const requestIdRef = useRef(0);
+
+  useEffect(() => {
+    setIsReady(true);
+  }, []);
 
   const mutation = useMutation({
     mutationFn: ({ conversation }: { conversation: ChatTurn[]; requestId: number }) =>
@@ -76,7 +81,7 @@ function SymptomCheckPage() {
 
   function send(text: string) {
     const value = text.trim();
-    if (!value || mutation.isPending) return;
+    if (!isReady || !value || mutation.isPending) return;
     setError(null);
     setQuickReplies([]);
     setInput("");
@@ -84,7 +89,9 @@ function SymptomCheckPage() {
     setMessages(next);
     const requestId = ++requestIdRef.current;
     mutation.mutate({
-      conversation: next.filter((m, i) => !(i === 0 && m.role === "assistant")),
+      conversation: next
+        .filter((m, i) => !(i === 0 && m.role === "assistant"))
+        .slice(-10),
       requestId,
     });
   }
@@ -126,7 +133,8 @@ function SymptomCheckPage() {
           <button
             type="button"
             onClick={restart}
-            className="focus-ring inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary"
+            disabled={!isReady}
+            className="focus-ring inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary disabled:cursor-wait disabled:opacity-50"
           >
             <RotateCcw className="size-3.5" aria-hidden /> Start over
           </button>
@@ -214,7 +222,8 @@ function SymptomCheckPage() {
                   key={s}
                   type="button"
                   onClick={() => send(s)}
-                  className="focus-ring rounded-full border border-border bg-card px-3 py-2 text-left text-xs font-medium hover:bg-secondary"
+                  disabled={!isReady}
+                  className="focus-ring rounded-full border border-border bg-card px-3 py-2 text-left text-xs font-medium hover:bg-secondary disabled:cursor-wait disabled:opacity-50"
                 >
                   {s}
                 </button>
@@ -229,7 +238,8 @@ function SymptomCheckPage() {
                   key={q}
                   type="button"
                   onClick={() => send(q)}
-                  className="focus-ring rounded-full border border-teal/40 bg-teal-soft px-3 py-2 text-xs font-semibold text-teal-foreground"
+                  disabled={!isReady}
+                  className="focus-ring rounded-full border border-teal/40 bg-teal-soft px-3 py-2 text-xs font-semibold text-teal-foreground disabled:cursor-wait disabled:opacity-50"
                 >
                   {q}
                 </button>
@@ -255,7 +265,8 @@ function SymptomCheckPage() {
                 id="symptom-input"
                 rows={2}
                 value={input}
-                disabled={mutation.isPending}
+                maxLength={2000}
+                disabled={!isReady || mutation.isPending}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey && window.innerWidth >= 768) {
@@ -264,7 +275,9 @@ function SymptomCheckPage() {
                   }
                 }}
                 placeholder={
-                  mutation.isPending
+                  !isReady
+                    ? "Getting the symptom checker ready…"
+                    : mutation.isPending
                     ? "CarePath AI is thinking…"
                     : "Describe what you're experiencing…"
                 }
@@ -272,7 +285,7 @@ function SymptomCheckPage() {
               />
               <button
                 type="submit"
-                disabled={mutation.isPending || !input.trim()}
+                disabled={!isReady || mutation.isPending || !input.trim()}
                 className="focus-ring grid size-11 shrink-0 place-items-center rounded-xl bg-teal text-teal-foreground disabled:opacity-40"
                 aria-label={mutation.isPending ? "AI is thinking" : "Send message"}
               >

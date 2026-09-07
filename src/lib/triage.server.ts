@@ -141,7 +141,7 @@ export async function runTriageTurn(messages: ChatTurn[]): Promise<TriageTurn> {
       system: SYSTEM_PROMPT,
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
       output: Output.object({ schema: turnSchema }),
-      maxRetries: 2,
+      maxRetries: 0,
     });
     const output = await result.output;
     return normaliseTurn(output as LooseTurn);
@@ -188,7 +188,7 @@ export async function summariseReviews(
     system: `You summarise ONLY the patient reviews given to you for a healthcare provider. Never invent facts, never generalise beyond the supplied text, never claim "patients agree". Use cautious phrasing such as "common themes in the available reviews include". If the reviews are too few or too thin to support a theme, say so and set enough_data to false. Keep every bullet under 15 words.`,
     prompt: `Provider: ${providerName}\nNumber of reviews available: ${usable.length}\n\n${corpus}`,
     output: Output.object({ schema: insightsSchema }),
-    maxRetries: 2,
+    maxRetries: 0,
   });
   const output = await result.output;
   return { ...(output as z.infer<typeof insightsSchema>), reviews_analyzed: usable.length };
