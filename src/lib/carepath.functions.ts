@@ -5,6 +5,7 @@ const chatInput = z.object({
   messages: z.array(
     z.object({ role: z.enum(["user", "assistant"]), content: z.string() }),
   ),
+  voice: z.boolean().nullable().optional(),
 });
 
 const searchInput = z.object({
@@ -27,7 +28,7 @@ export const triageTurn = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => chatInput.parse(input))
   .handler(async ({ data }) => {
     const { runTriageTurn } = await import("./triage.server");
-    return runTriageTurn(data.messages);
+    return runTriageTurn(data.messages, data.voice === true);
   });
 
 export const findProviders = createServerFn({ method: "POST" })

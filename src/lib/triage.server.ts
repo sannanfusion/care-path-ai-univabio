@@ -132,7 +132,17 @@ function extractJson(raw: string): unknown {
   }
 }
 
-export async function runTriageTurn(messages: ChatTurn[]): Promise<TriageTurn> {
+const VOICE_PROMPT = `
+VOICE CALL MODE: your reply will be spoken aloud on a live phone-style call.
+- Keep every reply to at most 2 short sentences (about 30 words). Never longer.
+- Ask only ONE question and stop. No lists, no numbering, no options read out.
+- Plain spoken words only: no markdown, no asterisks, no hyphens as bullets, no emojis, no parentheses, no abbreviations like "e.g." or "etc.".
+- When you reach the assessment, the spoken reply must be a single short sentence saying the summary is now on screen; the details stay in the assessment fields.`;
+
+export async function runTriageTurn(
+  messages: ChatTurn[],
+  voice = false,
+): Promise<TriageTurn> {
   const model = getChatModel();
   try {
     // Always stream gateway calls, even though this server function only returns
