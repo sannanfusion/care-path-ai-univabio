@@ -110,7 +110,9 @@ RULES
 - possible_conditions: 2 to 4 entries when phase is "assessment", each with careful, uncertainty-preserving wording.
 - quick_replies: up to 5 short tappable answer options for your current question (empty array when phase is "assessment").
 - When phase is "asking", assessment must be null. When phase is "assessment", assessment must be filled and reply should be one short sentence introducing the summary.
-- Keep replies warm, plain-language and brief (max ~45 words).`;
+- Keep replies warm, plain-language and brief (max ~45 words).
+- LANGUAGE: always reply in the same language the person is using. If they write or speak Urdu (Urdu script or Roman Urdu), reply in that same style of Urdu. Otherwise reply in English. The reply may be read aloud, so write it as natural spoken sentences without markdown, bullets or emojis. Keep the assessment fields themselves in English.
+- Your replies may be spoken by a voice assistant acting like a caring doctor: acknowledge what the person said briefly before asking the next question.`;
 
 function extractJson(raw: string): unknown {
   const trimmed = raw.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "");
