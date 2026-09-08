@@ -2,9 +2,10 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Loader2, RotateCcw, Send, Stethoscope } from "lucide-react";
+import { ArrowLeft, Loader2, Mic, RotateCcw, Send, Stethoscope } from "lucide-react";
 import { SiteNav } from "@/components/site-nav";
 import { EmergencyPanel } from "@/components/emergency-panel";
+import { VoiceConsult } from "@/components/voice-consult";
 import { triageTurn } from "@/lib/carepath.functions";
 import { setAssessment } from "@/lib/care-session";
 import { URGENCY_STYLES } from "@/lib/provider-utils";
@@ -43,6 +44,7 @@ function SymptomCheckPage() {
   const navigate = useNavigate();
   const call = useServerFn(triageTurn);
   const [isReady, setIsReady] = useState(false);
+  const [voiceOn, setVoiceOn] = useState(false);
   const [messages, setMessages] = useState<ChatTurn[]>([{ role: "assistant", content: OPENING }]);
   const [quickReplies, setQuickReplies] = useState<string[]>([]);
   const [assessment, setLocalAssessment] = useState<Assessment | null>(null);
@@ -118,6 +120,9 @@ function SymptomCheckPage() {
 
   const answered = messages.filter((m) => m.role === "user").length;
   const progress = assessment ? 100 : Math.min(90, answered * 22);
+  const assistantMessages = messages.filter((m) => m.role === "assistant");
+  const assistantCount = assistantMessages.length;
+  const lastAssistant = assistantMessages[assistantCount - 1]?.content ?? "";
 
   return (
     <div className="min-h-screen pb-24 md:pb-0">
@@ -130,16 +135,40 @@ function SymptomCheckPage() {
               Guided questions, then a structured summary. Not a diagnosis.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={restart}
-            disabled={!isReady}
-            className="focus-ring inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary disabled:cursor-wait disabled:opacity-50"
-          >
-            <RotateCcw className="size-3.5" aria-hidden /> Start over
-          </button>
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setVoiceOn((on) => !on)}
+              disabled={!isReady}
+              className={`focus-ring inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold disabled:cursor-wait disabled:opacity-50 ${
+                voiceOn
+                  ? "bg-teal text-teal-foreground"
+                  : "border border-teal/40 bg-teal-soft text-teal-foreground"
+              }`}
+            >
+              <Mic className="size-3.5" aria-hidden /> {voiceOn ? "Voice on" : "Talk to CarePath"}
+            </button>
+            <button
+              type="button"
+              onClick={restart}
+              disabled={!isReady}
+              className="focus-ring inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary disabled:cursor-wait disabled:opacity-50"
+            >
+              <RotateCcw className="size-3.5" aria-hidden /> Start over
+            </button>
+          </div>
         </div>
 
+        {voiceOn ? (
+          <VoiceConsult
+            onUserSpeech={send}
+            onEnd={() => setVoiceOn(false)}
+            isThinking={mutation.isPending}
+            spokenReply={lastAssistant}
+            replyKey={assistantCount}
+            transcriptPreview={lastAssistant}
+          />
+        ) : null}
 
         <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-surface" aria-hidden>
           <div
@@ -147,6 +176,7 @@ function SymptomCheckPage() {
             style={{ width: `${progress}%` }}
           />
         </div>
+
 
         <section className="mt-5 space-y-3" aria-live="polite">
           {messages.map((m, i) => (
