@@ -52,6 +52,24 @@ function encodeWav(samples: Float32Array): Blob {
   return new Blob([buffer], { type: "audio/wav" });
 }
 
+/** Strip markdown/symbols and keep the spoken reply to a couple of short sentences. */
+function toSpeech(raw: string): string {
+  const clean = raw
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/[*_`#>|~]/g, " ")
+    .replace(/^\s*[-•]\s+/gm, " ")
+    .replace(/\s*\([^)]*\)/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const sentences = clean.match(/[^.!?؟]+[.!?؟]?/g) ?? [clean];
+  let out = sentences.slice(0, 2).join(" ").trim();
+  if (out.length > 240) out = `${out.slice(0, 237).trim()}…`;
+  return out;
+}
+
 export function VoiceConsult({
   onUserSpeech,
   onEnd,
