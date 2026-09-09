@@ -84,8 +84,9 @@ function SymptomCheckPage() {
   });
 
   useEffect(() => {
+    if (voiceOn) return;
     endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, assessment, mutation.isPending]);
+  }, [messages, assessment, mutation.isPending, voiceOn]);
 
   function send(text: string) {
     const value = text.trim();
@@ -286,7 +287,7 @@ function SymptomCheckPage() {
           <div ref={endRef} />
         </section>
 
-        {!assessment ? (
+        {!assessment && !voiceOn ? (
           <form
             onSubmit={(e) => {
               e.preventDefault();
