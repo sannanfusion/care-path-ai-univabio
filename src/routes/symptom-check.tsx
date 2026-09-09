@@ -58,8 +58,14 @@ function SymptomCheckPage() {
   }, []);
 
   const mutation = useMutation({
-    mutationFn: ({ conversation }: { conversation: ChatTurn[]; requestId: number }) =>
-      call({ data: { messages: conversation } }),
+    mutationFn: ({
+      conversation,
+      voice,
+    }: {
+      conversation: ChatTurn[];
+      requestId: number;
+      voice?: boolean;
+    }) => call({ data: { messages: conversation, voice: voice ?? false } }),
     retry: false,
     onSuccess: (turn, variables) => {
       if (variables.requestId !== requestIdRef.current) return;
