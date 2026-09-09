@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 
-type Status = "connecting" | "listening" | "transcribing" | "thinking" | "speaking" | "error";
+type Status = "connecting" | "listening" | "paused" | "transcribing" | "thinking" | "speaking" | "error";
 
 const TARGET_RATE = 16000;
 const SPEECH_THRESHOLD = 0.02;
@@ -121,6 +121,8 @@ export function VoiceConsult({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const spokenKeyRef = useRef(0);
   const endedRef = useRef(false);
+  const pausedRef = useRef(false);
+  pausedRef.current = paused;
 
   const resetUtterance = () => {
     chunksRef.current = [];
@@ -282,9 +284,6 @@ export function VoiceConsult({
     return () => window.clearInterval(id);
   }, []);
 
-  const pausedRef = useRef(false);
-  pausedRef.current = paused;
-
   function togglePause() {
     const next = !paused;
     setPaused(next);
@@ -316,6 +315,7 @@ export function VoiceConsult({
   const label: Record<Status, string> = {
     connecting: "Connecting your microphone…",
     listening: "Listening — just speak naturally",
+    paused: "Microphone paused — tap resume to keep talking",
     transcribing: "Got it, processing what you said…",
     thinking: "CarePath AI is thinking…",
     speaking: "CarePath AI is speaking…",
