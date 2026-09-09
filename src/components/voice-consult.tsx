@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Loader2, Mic, PhoneOff, Volume2 } from "lucide-react";
+import { Loader2, Mic, PhoneOff, Send, Volume2 } from "lucide-react";
 
 type Status = "connecting" | "listening" | "transcribing" | "thinking" | "speaking" | "error";
 
@@ -89,6 +89,7 @@ export function VoiceConsult({
   const [level, setLevel] = useState(0);
   const [message, setMessage] = useState<string | null>(null);
   const [heard, setHeard] = useState("");
+  const [typed, setTyped] = useState("");
 
   const streamRef = useRef<MediaStream | null>(null);
   const ctxRef = useRef<AudioContext | null>(null);
@@ -223,7 +224,7 @@ export function VoiceConsult({
         const response = await fetch("/api/voice/speak", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: spokenReply }),
+          body: JSON.stringify({ text: toSpeech(spokenReply) }),
         });
         if (!response.ok) throw new Error(await response.text());
         const url = URL.createObjectURL(await response.blob());
@@ -308,12 +309,49 @@ export function VoiceConsult({
           <p className="max-w-md text-center text-xs text-muted-foreground">You said: “{heard}”</p>
         ) : null}
         {transcriptPreview && status === "speaking" ? (
-          <p className="max-w-md text-center text-xs text-muted-foreground">{transcriptPreview}</p>
+          <p className="max-w-md text-center text-xs text-muted-foreground">
+            {toSpeech(transcriptPreview)}
+          </p>
         ) : null}
         {message ? (
           <p className="max-w-md text-center text-xs text-destructive">{message}</p>
         ) : null}
       </div>
+
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          const value = typed.trim();
+          if (!value) return;
+          setTyped("");
+          setHeard(value);
+          onUserSpeech(value);
+        }}
+        className="mt-4 flex items-center gap-2 border-t border-border pt-3"
+      >
+        <label htmlFor="voice-typed" className="sr-only">
+          Type instead of speaking
+        </label>
+        <input
+          id="voice-typed"
+          value={typed}
+          maxLength={2000}
+          onChange={(event) => setTyped(event.target.value)}
+          placeholder="Prefer to type? Write your answer here…"
+          className="focus-ring min-h-10 w-full min-w-0 flex-1 rounded-xl border border-border bg-surface px-3 py-2 text-base outline-none sm:text-sm"
+        />
+        <button
+          type="submit"
+          disabled={!typed.trim()}
+          className="focus-ring grid size-10 shrink-0 place-items-center rounded-xl bg-teal text-teal-foreground disabled:opacity-40"
+          aria-label="Send typed answer"
+        >
+          <Send className="size-4" aria-hidden />
+        </button>
+      </form>
+      <p className="mt-2 text-center text-[11px] text-muted-foreground">
+        Everything you say is written into the conversation below as you talk.
+      </p>
     </section>
   );
 }
