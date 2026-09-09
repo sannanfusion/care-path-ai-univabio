@@ -101,6 +101,7 @@ function SymptomCheckPage() {
         .filter((m, i) => !(i === 0 && m.role === "assistant"))
         .slice(-10),
       requestId,
+      voice: voiceOn,
     });
   }
 
