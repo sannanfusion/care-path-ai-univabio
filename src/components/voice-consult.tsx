@@ -323,92 +323,152 @@ export function VoiceConsult({
   };
 
   return (
-    <section className="mt-5 rounded-2xl border border-teal/40 bg-card p-5 shadow-lift">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h2 className="text-base font-semibold">Voice consultation</h2>
-          <p className="text-xs text-muted-foreground">
-            Hands-free. Speak in English or Urdu — pause when you finish talking.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onEnd}
-          className="focus-ring inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-destructive/40 px-3 py-2 text-xs font-semibold text-destructive hover:bg-danger-soft"
-        >
-          <PhoneOff className="size-3.5" aria-hidden /> End call
-        </button>
-      </div>
-
-      <div className="mt-5 flex flex-col items-center gap-3">
-        <div className="relative grid size-24 place-items-center">
-          <span
-            className="absolute inset-0 rounded-full bg-teal/20 transition-transform duration-100"
-            style={{
-              transform: `scale(${status === "listening" ? 0.7 + level * 0.6 : 0.75})`,
-            }}
-            aria-hidden
-          />
-          <span className="relative grid size-16 place-items-center rounded-full bg-teal text-teal-foreground">
+    <section className="sticky top-2 z-30 mt-5 overflow-hidden rounded-2xl border border-teal/40 bg-card/95 shadow-lift backdrop-blur supports-[backdrop-filter]:bg-card/80">
+      <div className="flex items-center justify-between gap-3 border-b border-border/70 px-4 py-3">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="relative grid size-9 shrink-0 place-items-center rounded-xl bg-teal text-teal-foreground">
             {status === "speaking" ? (
-              <Volume2 className="size-6" aria-hidden />
+              <Volume2 className="size-4" aria-hidden />
             ) : status === "thinking" || status === "transcribing" || status === "connecting" ? (
-              <Loader2 className="size-6 animate-spin" aria-hidden />
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+            ) : paused ? (
+              <MicOff className="size-4" aria-hidden />
             ) : (
-              <Mic className="size-6" aria-hidden />
+              <Mic className="size-4" aria-hidden />
             )}
           </span>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold">Voice consultation</p>
+            <p className="truncate text-[11px] text-muted-foreground" aria-live="polite">
+              {label[status]}
+            </p>
+          </div>
         </div>
-        <p className="text-sm font-medium" aria-live="polite">
-          {label[status]}
-        </p>
-        {heard ? (
-          <p className="max-w-md text-center text-xs text-muted-foreground">You said: “{heard}”</p>
-        ) : null}
-        {transcriptPreview && status === "speaking" ? (
-          <p className="max-w-md text-center text-xs text-muted-foreground">
-            {toSpeech(transcriptPreview)}
-          </p>
-        ) : null}
-        {message ? (
-          <p className="max-w-md text-center text-xs text-destructive">{message}</p>
-        ) : null}
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="rounded-lg bg-surface px-2 py-1 font-mono text-[11px] tabular-nums text-muted-foreground">
+            {clock}
+          </span>
+          <button
+            type="button"
+            onClick={() => setCollapsed((c) => !c)}
+            aria-label={collapsed ? "Expand call panel" : "Collapse call panel"}
+            className="focus-ring grid size-8 place-items-center rounded-lg border border-border hover:bg-secondary"
+          >
+            {collapsed ? <ChevronDown className="size-4" aria-hidden /> : <ChevronUp className="size-4" aria-hidden />}
+          </button>
+          <button
+            type="button"
+            onClick={onEnd}
+            className="focus-ring inline-flex items-center gap-1.5 rounded-xl bg-destructive px-3 py-2 text-xs font-semibold text-white"
+          >
+            <PhoneOff className="size-3.5" aria-hidden /> End
+          </button>
+        </div>
       </div>
 
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          const value = typed.trim();
-          if (!value) return;
-          setTyped("");
-          setHeard(value);
-          onUserSpeech(value);
-        }}
-        className="mt-4 flex items-center gap-2 border-t border-border pt-3"
-      >
-        <label htmlFor="voice-typed" className="sr-only">
-          Type instead of speaking
-        </label>
-        <input
-          id="voice-typed"
-          value={typed}
-          maxLength={2000}
-          onChange={(event) => setTyped(event.target.value)}
-          placeholder="Prefer to type? Write your answer here…"
-          className="focus-ring min-h-10 w-full min-w-0 flex-1 rounded-xl border border-border bg-surface px-3 py-2 text-base outline-none sm:text-sm"
-        />
-        <button
-          type="submit"
-          disabled={!typed.trim()}
-          className="focus-ring grid size-10 shrink-0 place-items-center rounded-xl bg-teal text-teal-foreground disabled:opacity-40"
-          aria-label="Send typed answer"
-        >
-          <Send className="size-4" aria-hidden />
-        </button>
-      </form>
-      <p className="mt-2 text-center text-[11px] text-muted-foreground">
-        Everything you say is written into the conversation below as you talk.
-      </p>
+      {!collapsed ? (
+        <div className="px-4 pb-4">
+          <div className="mt-4 flex flex-col items-center gap-3">
+            <div className="relative grid size-24 place-items-center">
+              <span
+                className="absolute inset-0 rounded-full bg-teal/20 transition-transform duration-100"
+                style={{ transform: `scale(${status === "listening" ? 0.7 + level * 0.6 : 0.75})` }}
+                aria-hidden
+              />
+              <span
+                className={`relative grid size-16 place-items-center rounded-full text-teal-foreground ${
+                  paused ? "bg-muted-foreground" : "bg-teal"
+                }`}
+              >
+                {status === "speaking" ? (
+                  <Volume2 className="size-6" aria-hidden />
+                ) : status === "thinking" || status === "transcribing" || status === "connecting" ? (
+                  <Loader2 className="size-6 animate-spin" aria-hidden />
+                ) : paused ? (
+                  <MicOff className="size-6" aria-hidden />
+                ) : (
+                  <Mic className="size-6" aria-hidden />
+                )}
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={togglePause}
+                className="focus-ring inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary"
+              >
+                {paused ? <Mic className="size-3.5" aria-hidden /> : <MicOff className="size-3.5" aria-hidden />}
+                {paused ? "Resume mic" : "Pause mic"}
+              </button>
+              <button
+                type="button"
+                onClick={skipSpeech}
+                disabled={status !== "speaking"}
+                className="focus-ring inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary disabled:opacity-40"
+              >
+                <SkipForward className="size-3.5" aria-hidden /> Skip reply
+              </button>
+              <button
+                type="button"
+                onClick={() => setReplayKey((k) => k + 1)}
+                disabled={!spokenReply.trim() || status === "speaking"}
+                className="focus-ring inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary disabled:opacity-40"
+              >
+                <RotateCcw className="size-3.5" aria-hidden /> Repeat
+              </button>
+            </div>
+
+            {heard ? (
+              <p className="max-w-md text-center text-xs text-muted-foreground">You said: “{heard}”</p>
+            ) : null}
+            {transcriptPreview && status === "speaking" ? (
+              <p className="max-w-md text-center text-xs text-muted-foreground">
+                {toSpeech(transcriptPreview)}
+              </p>
+            ) : null}
+            {message ? (
+              <p className="max-w-md text-center text-xs text-destructive">{message}</p>
+            ) : null}
+          </div>
+
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              const value = typed.trim();
+              if (!value) return;
+              setTyped("");
+              setHeard(value);
+              onUserSpeech(value);
+            }}
+            className="mt-4 flex items-center gap-2 border-t border-border pt-3"
+          >
+            <label htmlFor="voice-typed" className="sr-only">
+              Type instead of speaking
+            </label>
+            <input
+              id="voice-typed"
+              value={typed}
+              maxLength={2000}
+              onChange={(event) => setTyped(event.target.value)}
+              placeholder="Prefer to type? Write your answer here…"
+              className="focus-ring min-h-10 w-full min-w-0 flex-1 rounded-xl border border-border bg-surface px-3 py-2 text-base outline-none sm:text-sm"
+            />
+            <button
+              type="submit"
+              disabled={!typed.trim()}
+              className="focus-ring grid size-10 shrink-0 place-items-center rounded-xl bg-teal text-teal-foreground disabled:opacity-40"
+              aria-label="Send typed answer"
+            >
+              <Send className="size-4" aria-hidden />
+            </button>
+          </form>
+          <p className="mt-2 text-center text-[11px] text-muted-foreground">
+            Everything you say is written into the conversation below as you talk.
+          </p>
+        </div>
+      ) : null}
     </section>
   );
 }
+
