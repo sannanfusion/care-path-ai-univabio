@@ -1,5 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Loader2, Mic, PhoneOff, Send, Volume2 } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  Mic,
+  MicOff,
+  PhoneOff,
+  RotateCcw,
+  Send,
+  SkipForward,
+  Volume2,
+} from "lucide-react";
+
 
 type Status = "connecting" | "listening" | "transcribing" | "thinking" | "speaking" | "error";
 
