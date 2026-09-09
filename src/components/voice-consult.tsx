@@ -228,10 +228,12 @@ export function VoiceConsult({
     };
   }, [finishUtterance]);
 
-  // Speak each new assistant reply, then resume listening.
+  // Speak each new assistant reply (or a replay), then resume listening.
   useEffect(() => {
-    if (!replyKey || replyKey === spokenKeyRef.current || !spokenReply.trim()) return;
-    spokenKeyRef.current = replyKey;
+    const isReplay = replayKey > 0;
+    if (!isReplay && (!replyKey || replyKey === spokenKeyRef.current)) return;
+    if (!spokenReply.trim()) return;
+    if (!isReplay) spokenKeyRef.current = replyKey;
     let cancelled = false;
     (async () => {
       captureRef.current = false;
@@ -259,19 +261,57 @@ export function VoiceConsult({
         speakingRef.current = false;
         if (!cancelled && !endedRef.current) {
           resetUtterance();
-          captureRef.current = true;
-          setStatus("listening");
+          captureRef.current = !pausedRef.current;
+          setStatus(pausedRef.current ? "paused" : "listening");
         }
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [replyKey, spokenReply]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [replyKey, spokenReply, replayKey]);
 
   useEffect(() => {
     if (isThinking) setStatus("thinking");
   }, [isThinking]);
+
+  // Call duration.
+  useEffect(() => {
+    const id = window.setInterval(() => setSeconds((s) => s + 1), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const pausedRef = useRef(false);
+  pausedRef.current = paused;
+
+  function togglePause() {
+    const next = !paused;
+    setPaused(next);
+    if (next) {
+      captureRef.current = false;
+      audioRef.current?.pause();
+      speakingRef.current = false;
+      setStatus("paused");
+    } else {
+      resetUtterance();
+      captureRef.current = true;
+      setStatus("listening");
+    }
+  }
+
+  function skipSpeech() {
+    audioRef.current?.pause();
+    audioRef.current = null;
+    speakingRef.current = false;
+    resetUtterance();
+    captureRef.current = !paused;
+    setStatus(paused ? "paused" : "listening");
+  }
+
+  const clock = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+
+
 
   const label: Record<Status, string> = {
     connecting: "Connecting your microphone…",
