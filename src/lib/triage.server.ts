@@ -150,7 +150,7 @@ export async function runTriageTurn(
     // of leaving one silent request that the platform can cancel with HTTP 499.
     const result = streamText({
       model,
-      system: SYSTEM_PROMPT,
+      system: voice ? `${SYSTEM_PROMPT}\n${VOICE_PROMPT}` : SYSTEM_PROMPT,
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
       output: Output.object({ schema: turnSchema }),
       maxRetries: 0,
