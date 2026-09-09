@@ -348,7 +348,8 @@ function SymptomCheckPage() {
             ) : null}
           </form>
 
-        ) : (
+        ) : null}
+        {assessment ? (
           <AssessmentView
             assessment={assessment}
             onContinue={() =>
@@ -362,7 +363,8 @@ function SymptomCheckPage() {
             }
             onRestart={restart}
           />
-        )}
+        ) : null}
+
       </main>
     </div>
   );
