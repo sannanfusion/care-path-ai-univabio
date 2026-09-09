@@ -102,6 +102,11 @@ export function VoiceConsult({
   const [message, setMessage] = useState<string | null>(null);
   const [heard, setHeard] = useState("");
   const [typed, setTyped] = useState("");
+  const [paused, setPaused] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [seconds, setSeconds] = useState(0);
+  const [replayKey, setReplayKey] = useState(0);
+
 
   const streamRef = useRef<MediaStream | null>(null);
   const ctxRef = useRef<AudioContext | null>(null);
