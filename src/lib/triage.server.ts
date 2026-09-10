@@ -51,7 +51,7 @@ function shortVoiceReply(value: string): string {
   const sentences = clean.match(/[^.!?؟]+[.!?؟]?/g) ?? [clean];
   const twoSentences = sentences.slice(0, 2).join(" ").trim();
   const words = twoSentences.split(/\s+/).filter(Boolean);
-  return words.length <= 30 ? twoSentences : `${words.slice(0, 30).join(" ").replace(/[,:;]$/, "")}.`;
+  return words.length <= 25 ? twoSentences : `${words.slice(0, 25).join(" ").replace(/[,:;]$/, "")}.`;
 }
 
 function normaliseTurn(raw: LooseTurn, voice = false): TriageTurn {
@@ -122,7 +122,7 @@ RULES
 - possible_conditions: 2 to 4 entries when phase is "assessment", each with careful, uncertainty-preserving wording.
 - quick_replies: up to 5 short tappable answer options for your current question (empty array when phase is "assessment").
 - When phase is "asking", assessment must be null. When phase is "assessment", assessment must be filled and reply should be one short sentence introducing the summary.
-- Keep replies warm, plain-language and brief (max ~45 words).
+- CHAT MODE LENGTH: keep replies to 1-3 short sentences (max ~40 words). Acknowledge what they said in a few words, then ask your one question. Never write paragraphs, lists or long explanations in the reply — details belong in the assessment fields only.
 - LANGUAGE: always reply in the same language the person is using. If they write or speak Urdu (Urdu script or Roman Urdu), reply in that same style of Urdu. Otherwise reply in English. The reply may be read aloud, so write it as natural spoken sentences without markdown, bullets or emojis. Keep the assessment fields themselves in English.
 - Your replies may be spoken by a voice assistant acting like a caring doctor: acknowledge what the person said briefly before asking the next question.`;
 
@@ -145,9 +145,9 @@ function extractJson(raw: string): unknown {
 }
 
 const VOICE_PROMPT = `
-VOICE CALL MODE: your reply will be spoken aloud on a live phone-style call.
-- Keep every reply to at most 2 short sentences (about 30 words). Never longer.
-- Ask only ONE question and stop. No lists, no numbering, no options read out.
+VOICE CALL MODE: your reply will be spoken aloud on a live phone-style call. This overrides every other length instruction.
+- HARD LIMIT: every reply is at most 2 short sentences and under 25 words. Never longer, no exceptions.
+- Ask only ONE short question and stop. No lists, no numbering, no options read out.
 - Plain spoken words only: no markdown, no asterisks, no hyphens as bullets, no emojis, no parentheses, no abbreviations like "e.g." or "etc.".
 - When you reach the assessment, the spoken reply must be a single short sentence saying the summary is now on screen; the details stay in the assessment fields.`;
 
