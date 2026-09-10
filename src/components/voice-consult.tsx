@@ -335,7 +335,7 @@ export function VoiceConsult({
   const label: Record<Status, string> = {
     connecting: "Connecting your microphone…",
     listening: "Listening — just speak naturally",
-    paused: "Microphone paused — tap resume to keep talking",
+    paused: "Microphone off — tap “Turn mic on” when you're ready to speak",
     transcribing: "Got it, processing what you said…",
     thinking: "CarePath AI is thinking…",
     speaking: "CarePath AI is speaking…",
@@ -419,7 +419,7 @@ export function VoiceConsult({
                 className="focus-ring inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary"
               >
                 {paused ? <Mic className="size-3.5" aria-hidden /> : <MicOff className="size-3.5" aria-hidden />}
-                {paused ? "Resume mic" : "Pause mic"}
+                {paused ? "Turn mic on" : "Turn mic off"}
               </button>
               <button
                 type="button"
