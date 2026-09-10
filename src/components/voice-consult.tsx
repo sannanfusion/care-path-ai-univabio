@@ -89,6 +89,7 @@ export function VoiceConsult({
   spokenReply,
   replyKey,
   transcriptPreview,
+  voiceError,
 }: {
   onUserSpeech: (text: string) => void;
   onEnd: () => void;
@@ -96,6 +97,7 @@ export function VoiceConsult({
   spokenReply: string;
   replyKey: number;
   transcriptPreview: string;
+  voiceError?: string | null;
 }) {
   const [status, setStatus] = useState<Status>("connecting");
   const [level, setLevel] = useState(0);
@@ -119,6 +121,7 @@ export function VoiceConsult({
   const utteranceStartRef = useRef(0);
   const captureRef = useRef(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const playbackDoneRef = useRef<(() => void) | null>(null);
   const spokenKeyRef = useRef(0);
   const endedRef = useRef(false);
   const pausedRef = useRef(false);
@@ -154,6 +157,7 @@ export function VoiceConsult({
         return;
       }
       setHeard(text);
+      setMessage(null);
       setStatus("thinking");
       onUserSpeech(text);
     } catch (error) {
@@ -223,6 +227,7 @@ export function VoiceConsult({
       endedRef.current = true;
       captureRef.current = false;
       audioRef.current?.pause();
+      playbackDoneRef.current?.();
       nodeRef.current?.disconnect();
       sourceRef.current?.disconnect();
       streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -252,8 +257,13 @@ export function VoiceConsult({
         const audio = new Audio(url);
         audioRef.current = audio;
         await new Promise<void>((resolve) => {
-          audio.onended = () => resolve();
-          audio.onerror = () => resolve();
+          const finish = () => {
+            playbackDoneRef.current = null;
+            resolve();
+          };
+          playbackDoneRef.current = finish;
+          audio.onended = finish;
+          audio.onerror = finish;
           void audio.play().catch(() => resolve());
         });
         URL.revokeObjectURL(url);
@@ -278,6 +288,13 @@ export function VoiceConsult({
     if (isThinking) setStatus("thinking");
   }, [isThinking]);
 
+  useEffect(() => {
+    if (!voiceError) return;
+    setMessage(voiceError);
+    captureRef.current = !pausedRef.current;
+    setStatus(pausedRef.current ? "paused" : "listening");
+  }, [voiceError]);
+
   // Call duration.
   useEffect(() => {
     const id = window.setInterval(() => setSeconds((s) => s + 1), 1000);
@@ -286,10 +303,12 @@ export function VoiceConsult({
 
   function togglePause() {
     const next = !paused;
+    pausedRef.current = next;
     setPaused(next);
     if (next) {
       captureRef.current = false;
       audioRef.current?.pause();
+      playbackDoneRef.current?.();
       speakingRef.current = false;
       setStatus("paused");
     } else {
@@ -301,6 +320,7 @@ export function VoiceConsult({
 
   function skipSpeech() {
     audioRef.current?.pause();
+    playbackDoneRef.current?.();
     audioRef.current = null;
     speakingRef.current = false;
     resetUtterance();
@@ -450,13 +470,14 @@ export function VoiceConsult({
               id="voice-typed"
               value={typed}
               maxLength={2000}
+              disabled={isThinking}
               onChange={(event) => setTyped(event.target.value)}
-              placeholder="Prefer to type? Write your answer here…"
+              placeholder={isThinking ? "CarePath AI is thinking…" : "Prefer to type? Write your answer here…"}
               className="focus-ring min-h-10 w-full min-w-0 flex-1 rounded-xl border border-border bg-surface px-3 py-2 text-base outline-none sm:text-sm"
             />
             <button
               type="submit"
-              disabled={!typed.trim()}
+              disabled={isThinking || !typed.trim()}
               className="focus-ring grid size-10 shrink-0 place-items-center rounded-xl bg-teal text-teal-foreground disabled:opacity-40"
               aria-label="Send typed answer"
             >
