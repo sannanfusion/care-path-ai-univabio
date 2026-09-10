@@ -51,7 +51,7 @@ function shortVoiceReply(value: string): string {
   const sentences = clean.match(/[^.!?؟]+[.!?؟]?/g) ?? [clean];
   const twoSentences = sentences.slice(0, 2).join(" ").trim();
   const words = twoSentences.split(/\s+/).filter(Boolean);
-  return words.length <= 30 ? twoSentences : `${words.slice(0, 30).join(" ").replace(/[,:;]$/, "")}.`;
+  return words.length <= 25 ? twoSentences : `${words.slice(0, 25).join(" ").replace(/[,:;]$/, "")}.`;
 }
 
 function normaliseTurn(raw: LooseTurn, voice = false): TriageTurn {
