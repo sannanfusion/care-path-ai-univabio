@@ -175,6 +175,7 @@ function SymptomCheckPage() {
             spokenReply={lastAssistant}
             replyKey={assistantCount}
             transcriptPreview={lastAssistant}
+            voiceError={error}
           />
         ) : null}
 
