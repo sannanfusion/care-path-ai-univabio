@@ -46,7 +46,15 @@ type LooseTurn = z.infer<typeof turnSchema>;
 const text = (v: unknown, fallback = "") =>
   typeof v === "string" && v.trim().length > 0 ? v.trim() : fallback;
 
-function normaliseTurn(raw: LooseTurn): TriageTurn {
+function shortVoiceReply(value: string): string {
+  const clean = value.replace(/[*_`#>|~]/g, " ").replace(/\s+/g, " ").trim();
+  const sentences = clean.match(/[^.!?؟]+[.!?؟]?/g) ?? [clean];
+  const twoSentences = sentences.slice(0, 2).join(" ").trim();
+  const words = twoSentences.split(/\s+/).filter(Boolean);
+  return words.length <= 30 ? twoSentences : `${words.slice(0, 30).join(" ").replace(/[,:;]$/, "")}.`;
+}
+
+function normaliseTurn(raw: LooseTurn, voice = false): TriageTurn {
   const a = raw.assessment;
   const hasAssessment =
     !!a && (text(a.summary) !== "" || (a.possible_conditions?.length ?? 0) > 0);
@@ -54,7 +62,9 @@ function normaliseTurn(raw: LooseTurn): TriageTurn {
 
   if (phase === "asking" || !a) {
     return {
-      reply: text(raw.reply, "Could you tell me a little more about what you're experiencing?"),
+      reply: voice
+        ? shortVoiceReply(text(raw.reply, "Could you tell me a little more about what you're experiencing?"))
+        : text(raw.reply, "Could you tell me a little more about what you're experiencing?"),
       phase: "asking",
       quick_replies: (raw.quick_replies ?? []).filter((q) => text(q) !== "").slice(0, 5),
       assessment: null,
@@ -66,7 +76,9 @@ function normaliseTurn(raw: LooseTurn): TriageTurn {
     urgencyRaw === "emergency" || urgencyRaw === "urgent" ? urgencyRaw : ("routine" as const);
 
   return {
-    reply: text(raw.reply, "Here's a summary of what you've described."),
+    reply: voice
+      ? shortVoiceReply(text(raw.reply, "Your symptom summary and next step are ready on screen."))
+      : text(raw.reply, "Here's a summary of what you've described."),
     phase: "assessment",
     quick_replies: [],
     assessment: {
@@ -156,11 +168,11 @@ export async function runTriageTurn(
       maxRetries: 0,
     });
     const output = await result.output;
-    return normaliseTurn(output as LooseTurn);
+    return normaliseTurn(output as LooseTurn, voice);
   } catch (error) {
     if (NoObjectGeneratedError.isInstance(error) && error.text) {
       const parsed = turnSchema.safeParse(extractJson(error.text));
-      if (parsed.success) return normaliseTurn(parsed.data);
+      if (parsed.success) return normaliseTurn(parsed.data, voice);
     }
     throw error;
   }

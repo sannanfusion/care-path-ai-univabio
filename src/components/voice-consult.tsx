@@ -119,6 +119,7 @@ export function VoiceConsult({
   const utteranceStartRef = useRef(0);
   const captureRef = useRef(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const playbackDoneRef = useRef<(() => void) | null>(null);
   const spokenKeyRef = useRef(0);
   const endedRef = useRef(false);
   const pausedRef = useRef(false);
@@ -223,6 +224,7 @@ export function VoiceConsult({
       endedRef.current = true;
       captureRef.current = false;
       audioRef.current?.pause();
+      playbackDoneRef.current?.();
       nodeRef.current?.disconnect();
       sourceRef.current?.disconnect();
       streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -252,8 +254,13 @@ export function VoiceConsult({
         const audio = new Audio(url);
         audioRef.current = audio;
         await new Promise<void>((resolve) => {
-          audio.onended = () => resolve();
-          audio.onerror = () => resolve();
+          const finish = () => {
+            playbackDoneRef.current = null;
+            resolve();
+          };
+          playbackDoneRef.current = finish;
+          audio.onended = finish;
+          audio.onerror = finish;
           void audio.play().catch(() => resolve());
         });
         URL.revokeObjectURL(url);
@@ -290,6 +297,7 @@ export function VoiceConsult({
     if (next) {
       captureRef.current = false;
       audioRef.current?.pause();
+      playbackDoneRef.current?.();
       speakingRef.current = false;
       setStatus("paused");
     } else {
@@ -301,6 +309,7 @@ export function VoiceConsult({
 
   function skipSpeech() {
     audioRef.current?.pause();
+    playbackDoneRef.current?.();
     audioRef.current = null;
     speakingRef.current = false;
     resetUtterance();
