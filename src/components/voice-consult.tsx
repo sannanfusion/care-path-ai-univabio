@@ -104,7 +104,7 @@ export function VoiceConsult({
   const [message, setMessage] = useState<string | null>(null);
   const [heard, setHeard] = useState("");
   const [typed, setTyped] = useState("");
-  const [paused, setPaused] = useState(false);
+  const [paused, setPaused] = useState(true);
   const [collapsed, setCollapsed] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [replayKey, setReplayKey] = useState(0);
@@ -214,8 +214,8 @@ export function VoiceConsult({
         source.connect(node);
         node.connect(ctx.destination);
         resetUtterance();
-        captureRef.current = true;
-        setStatus("listening");
+        captureRef.current = !pausedRef.current;
+        setStatus(pausedRef.current ? "paused" : "listening");
       } catch {
         setStatus("error");
         setMessage("Microphone access is needed for a voice consultation. Please allow it and try again.");
@@ -335,7 +335,7 @@ export function VoiceConsult({
   const label: Record<Status, string> = {
     connecting: "Connecting your microphone…",
     listening: "Listening — just speak naturally",
-    paused: "Microphone paused — tap resume to keep talking",
+    paused: "Microphone off — tap “Turn mic on” when you're ready to speak",
     transcribing: "Got it, processing what you said…",
     thinking: "CarePath AI is thinking…",
     speaking: "CarePath AI is speaking…",
@@ -419,7 +419,7 @@ export function VoiceConsult({
                 className="focus-ring inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary"
               >
                 {paused ? <Mic className="size-3.5" aria-hidden /> : <MicOff className="size-3.5" aria-hidden />}
-                {paused ? "Resume mic" : "Pause mic"}
+                {paused ? "Turn mic on" : "Turn mic off"}
               </button>
               <button
                 type="button"
