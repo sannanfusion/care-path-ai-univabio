@@ -245,6 +245,7 @@ export function VoiceConsult({
     if (!isReplay && (!replyKey || replyKey === spokenKeyRef.current)) return;
     if (!spokenReply.trim()) return;
     if (!isReplay) spokenKeyRef.current = replyKey;
+    if (agentMutedRef.current) return;
     let cancelled = false;
     (async () => {
       captureRef.current = false;
