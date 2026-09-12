@@ -444,6 +444,14 @@ export function VoiceConsult({
               </button>
               <button
                 type="button"
+                onClick={toggleAgentMute}
+                className="focus-ring inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary"
+              >
+                {agentMuted ? <Volume2 className="size-3.5" aria-hidden /> : <VolumeX className="size-3.5" aria-hidden />}
+                {agentMuted ? "Unmute AI voice" : "Mute AI voice"}
+              </button>
+              <button
+                type="button"
                 onClick={skipSpeech}
                 disabled={status !== "speaking"}
                 className="focus-ring inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary disabled:opacity-40"
