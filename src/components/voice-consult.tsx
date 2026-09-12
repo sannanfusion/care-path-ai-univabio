@@ -301,20 +301,19 @@ export function VoiceConsult({
     return () => window.clearInterval(id);
   }, []);
 
+  // Mic toggle only mutes the human microphone — the AI voice keeps playing.
   function togglePause() {
     const next = !paused;
     pausedRef.current = next;
     setPaused(next);
     if (next) {
       captureRef.current = false;
-      audioRef.current?.pause();
-      playbackDoneRef.current?.();
-      speakingRef.current = false;
-      setStatus("paused");
+      resetUtterance();
+      if (!speakingRef.current) setStatus("paused");
     } else {
       resetUtterance();
-      captureRef.current = true;
-      setStatus("listening");
+      captureRef.current = !speakingRef.current;
+      if (!speakingRef.current) setStatus("listening");
     }
   }
 
