@@ -10,6 +10,7 @@ import {
   Send,
   SkipForward,
   Volume2,
+  VolumeX,
 } from "lucide-react";
 
 
@@ -108,6 +109,7 @@ export function VoiceConsult({
   const [collapsed, setCollapsed] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [replayKey, setReplayKey] = useState(0);
+  const [agentMuted, setAgentMuted] = useState(false);
 
 
   const streamRef = useRef<MediaStream | null>(null);
@@ -126,6 +128,8 @@ export function VoiceConsult({
   const endedRef = useRef(false);
   const pausedRef = useRef(false);
   pausedRef.current = paused;
+  const agentMutedRef = useRef(false);
+  agentMutedRef.current = agentMuted;
 
   const resetUtterance = () => {
     chunksRef.current = [];
