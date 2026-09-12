@@ -460,7 +460,10 @@ export function VoiceConsult({
               </button>
               <button
                 type="button"
-                onClick={() => setReplayKey((k) => k + 1)}
+                onClick={() => {
+                  setAgentMuted(false);
+                  setReplayKey((k) => k + 1);
+                }}
                 disabled={!spokenReply.trim() || status === "speaking"}
                 className="focus-ring inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary disabled:opacity-40"
               >
