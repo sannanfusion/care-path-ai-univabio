@@ -10,6 +10,7 @@ import {
   Send,
   SkipForward,
   Volume2,
+  VolumeX,
 } from "lucide-react";
 
 
@@ -108,6 +109,7 @@ export function VoiceConsult({
   const [collapsed, setCollapsed] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [replayKey, setReplayKey] = useState(0);
+  const [agentMuted, setAgentMuted] = useState(false);
 
 
   const streamRef = useRef<MediaStream | null>(null);
@@ -126,6 +128,8 @@ export function VoiceConsult({
   const endedRef = useRef(false);
   const pausedRef = useRef(false);
   pausedRef.current = paused;
+  const agentMutedRef = useRef(false);
+  agentMutedRef.current = agentMuted;
 
   const resetUtterance = () => {
     chunksRef.current = [];
@@ -241,6 +245,7 @@ export function VoiceConsult({
     if (!isReplay && (!replyKey || replyKey === spokenKeyRef.current)) return;
     if (!spokenReply.trim()) return;
     if (!isReplay) spokenKeyRef.current = replyKey;
+    if (agentMutedRef.current) return;
     let cancelled = false;
     (async () => {
       captureRef.current = false;
@@ -314,6 +319,23 @@ export function VoiceConsult({
       resetUtterance();
       captureRef.current = !speakingRef.current;
       if (!speakingRef.current) setStatus("listening");
+    }
+  }
+
+  // Mutes/unmutes the AI voice only — the call and your mic keep working.
+  function toggleAgentMute() {
+    const next = !agentMuted;
+    setAgentMuted(next);
+    if (next) {
+      audioRef.current?.pause();
+      playbackDoneRef.current?.();
+      audioRef.current = null;
+      speakingRef.current = false;
+      if (status === "speaking") {
+        resetUtterance();
+        captureRef.current = !pausedRef.current;
+        setStatus(pausedRef.current ? "paused" : "listening");
+      }
     }
   }
 
@@ -422,6 +444,14 @@ export function VoiceConsult({
               </button>
               <button
                 type="button"
+                onClick={toggleAgentMute}
+                className="focus-ring inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary"
+              >
+                {agentMuted ? <Volume2 className="size-3.5" aria-hidden /> : <VolumeX className="size-3.5" aria-hidden />}
+                {agentMuted ? "Unmute AI voice" : "Mute AI voice"}
+              </button>
+              <button
+                type="button"
                 onClick={skipSpeech}
                 disabled={status !== "speaking"}
                 className="focus-ring inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary disabled:opacity-40"
@@ -430,7 +460,10 @@ export function VoiceConsult({
               </button>
               <button
                 type="button"
-                onClick={() => setReplayKey((k) => k + 1)}
+                onClick={() => {
+                  setAgentMuted(false);
+                  setReplayKey((k) => k + 1);
+                }}
                 disabled={!spokenReply.trim() || status === "speaking"}
                 className="focus-ring inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary disabled:opacity-40"
               >
