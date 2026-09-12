@@ -322,6 +322,23 @@ export function VoiceConsult({
     }
   }
 
+  // Mutes/unmutes the AI voice only — the call and your mic keep working.
+  function toggleAgentMute() {
+    const next = !agentMuted;
+    setAgentMuted(next);
+    if (next) {
+      audioRef.current?.pause();
+      playbackDoneRef.current?.();
+      audioRef.current = null;
+      speakingRef.current = false;
+      if (status === "speaking") {
+        resetUtterance();
+        captureRef.current = !pausedRef.current;
+        setStatus(pausedRef.current ? "paused" : "listening");
+      }
+    }
+  }
+
   function skipSpeech() {
     audioRef.current?.pause();
     playbackDoneRef.current?.();
