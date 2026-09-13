@@ -100,7 +100,7 @@ export function VoiceConsult({
   transcriptPreview: string;
   voiceError?: string | null;
 }) {
-  const [status, setStatus] = useState<Status>("connecting");
+  const [status, setStatus] = useState<Status>("paused");
   const [level, setLevel] = useState(0);
   const [message, setMessage] = useState<string | null>(null);
   const [heard, setHeard] = useState("");
@@ -130,6 +130,8 @@ export function VoiceConsult({
   pausedRef.current = paused;
   const agentMutedRef = useRef(false);
   agentMutedRef.current = agentMuted;
+  const onUserSpeechRef = useRef(onUserSpeech);
+  onUserSpeechRef.current = onUserSpeech;
 
   const resetUtterance = () => {
     chunksRef.current = [];
@@ -163,29 +165,56 @@ export function VoiceConsult({
       setHeard(text);
       setMessage(null);
       setStatus("thinking");
-      onUserSpeech(text);
+      onUserSpeechRef.current(text);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not understand that.");
       captureRef.current = true;
       setStatus("listening");
     }
-  }, [onUserSpeech]);
+  }, []);
 
-  // Start the microphone once when the call opens.
+  // Keep teardown separate from microphone setup so mobile browsers only receive
+  // a permission request directly from the user's "Turn mic on" tap.
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
+    return () => {
+      endedRef.current = true;
+      captureRef.current = false;
+      audioRef.current?.pause();
+      playbackDoneRef.current?.();
+      nodeRef.current?.disconnect();
+      sourceRef.current?.disconnect();
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      void ctxRef.current?.close().catch(() => undefined);
+    };
+  }, []);
+
+  async function startMicrophone() {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setStatus("error");
+      setMessage("Voice input is not supported by this browser. You can still type your answer below.");
+      return false;
+    }
+
+    setStatus("connecting");
+    setMessage(null);
+    try {
+      if (streamRef.current && ctxRef.current) {
+        streamRef.current.getAudioTracks().forEach((track) => {
+          track.enabled = true;
+        });
+        await ctxRef.current.resume();
+      } else {
         const stream = await navigator.mediaDevices.getUserMedia({
           audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
         });
-        if (cancelled) {
-          stream.getTracks().forEach((t) => t.stop());
-          return;
+        if (endedRef.current) {
+          stream.getTracks().forEach((track) => track.stop());
+          return false;
         }
         streamRef.current = stream;
         const ctx = new AudioContext();
         ctxRef.current = ctx;
+        await ctx.resume();
         const source = ctx.createMediaStreamSource(stream);
         sourceRef.current = source;
         const node = ctx.createScriptProcessor(4096, 1, 1);
@@ -217,27 +246,21 @@ export function VoiceConsult({
         };
         source.connect(node);
         node.connect(ctx.destination);
-        resetUtterance();
-        captureRef.current = !pausedRef.current;
-        setStatus(pausedRef.current ? "paused" : "listening");
-      } catch {
-        setStatus("error");
-        setMessage("Microphone access is needed for a voice consultation. Please allow it and try again.");
       }
-    })();
-
-    return () => {
-      cancelled = true;
-      endedRef.current = true;
-      captureRef.current = false;
-      audioRef.current?.pause();
-      playbackDoneRef.current?.();
-      nodeRef.current?.disconnect();
-      sourceRef.current?.disconnect();
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-      void ctxRef.current?.close().catch(() => undefined);
-    };
-  }, [finishUtterance]);
+      resetUtterance();
+      captureRef.current = true;
+      setStatus("listening");
+      return true;
+    } catch {
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+      setPaused(true);
+      pausedRef.current = true;
+      setStatus("error");
+      setMessage("Microphone access was blocked. Allow microphone access in your browser settings, then tap Turn mic on again.");
+      return false;
+    }
+  }
 
   // Speak each new assistant reply (or a replay), then resume listening.
   useEffect(() => {
@@ -307,18 +330,25 @@ export function VoiceConsult({
   }, []);
 
   // Mic toggle only mutes the human microphone — the AI voice keeps playing.
-  function togglePause() {
+  async function togglePause() {
     const next = !paused;
-    pausedRef.current = next;
-    setPaused(next);
     if (next) {
+      pausedRef.current = true;
+      setPaused(true);
       captureRef.current = false;
+      streamRef.current?.getAudioTracks().forEach((track) => {
+        track.enabled = false;
+      });
       resetUtterance();
       if (!speakingRef.current) setStatus("paused");
     } else {
-      resetUtterance();
-      captureRef.current = !speakingRef.current;
-      if (!speakingRef.current) setStatus("listening");
+      const started = await startMicrophone();
+      if (started) {
+        pausedRef.current = false;
+        setPaused(false);
+        captureRef.current = !speakingRef.current;
+        if (!speakingRef.current) setStatus("listening");
+      }
     }
   }
 
@@ -364,7 +394,7 @@ export function VoiceConsult({
   };
 
   return (
-    <section className="sticky top-2 z-30 mt-5 overflow-hidden rounded-2xl border border-teal/40 bg-card/95 shadow-lift backdrop-blur supports-[backdrop-filter]:bg-card/80">
+    <section className="sticky top-2 z-30 mt-5 max-h-[calc(100dvh-5.5rem)] overflow-hidden rounded-2xl border border-teal/40 bg-card/95 shadow-lift backdrop-blur supports-[backdrop-filter]:bg-card/80">
       <div className="flex items-center justify-between gap-3 border-b border-border/70 px-4 py-3">
         <div className="flex min-w-0 items-center gap-2.5">
           <span className="relative grid size-9 shrink-0 place-items-center rounded-xl bg-teal text-teal-foreground">
@@ -408,16 +438,16 @@ export function VoiceConsult({
       </div>
 
       {!collapsed ? (
-        <div className="px-4 pb-4">
-          <div className="mt-4 flex flex-col items-center gap-3">
-            <div className="relative grid size-24 place-items-center">
+        <div className="max-h-[calc(100dvh-10.5rem)] overflow-y-auto overscroll-contain px-3 pb-3 sm:px-4 sm:pb-4">
+          <div className="mt-3 flex flex-col items-center gap-2 sm:mt-4 sm:gap-3">
+            <div className="relative grid size-20 place-items-center sm:size-24">
               <span
                 className="absolute inset-0 rounded-full bg-teal/20 transition-transform duration-100"
                 style={{ transform: `scale(${status === "listening" ? 0.7 + level * 0.6 : 0.75})` }}
                 aria-hidden
               />
               <span
-                className={`relative grid size-16 place-items-center rounded-full text-teal-foreground ${
+                className={`relative grid size-14 place-items-center rounded-full text-teal-foreground sm:size-16 ${
                   paused ? "bg-muted-foreground" : "bg-teal"
                 }`}
               >
@@ -491,9 +521,12 @@ export function VoiceConsult({
               if (!value) return;
               setTyped("");
               setHeard(value);
-              onUserSpeech(value);
+              captureRef.current = false;
+              resetUtterance();
+              setStatus("thinking");
+              onUserSpeechRef.current(value);
             }}
-            className="mt-4 flex items-center gap-2 border-t border-border pt-3"
+            className="mt-3 flex items-center gap-2 border-t border-border pt-3 sm:mt-4"
           >
             <label htmlFor="voice-typed" className="sr-only">
               Type instead of speaking
