@@ -394,7 +394,7 @@ export function VoiceConsult({
   };
 
   return (
-    <section className="sticky top-2 z-30 mt-5 max-h-[calc(100dvh-5.5rem)] overflow-hidden rounded-2xl border border-teal/40 bg-card/95 shadow-lift backdrop-blur supports-[backdrop-filter]:bg-card/80">
+    <section className="sticky top-[4.75rem] z-30 mt-5 max-h-[calc(100dvh-9.5rem)] overflow-hidden rounded-2xl border border-teal/40 bg-card/95 shadow-lift backdrop-blur supports-[backdrop-filter]:bg-card/80 md:top-2 md:max-h-[calc(100dvh-5.5rem)]">
       <div className="flex items-center justify-between gap-3 border-b border-border/70 px-4 py-3">
         <div className="flex min-w-0 items-center gap-2.5">
           <span className="relative grid size-9 shrink-0 place-items-center rounded-xl bg-teal text-teal-foreground">
@@ -438,7 +438,7 @@ export function VoiceConsult({
       </div>
 
       {!collapsed ? (
-        <div className="max-h-[calc(100dvh-10.5rem)] overflow-y-auto overscroll-contain px-3 pb-3 sm:px-4 sm:pb-4">
+        <div className="max-h-[calc(100dvh-14.5rem)] overflow-y-auto overscroll-contain px-3 pb-3 sm:px-4 sm:pb-4 md:max-h-[calc(100dvh-10.5rem)]">
           <div className="mt-3 flex flex-col items-center gap-2 sm:mt-4 sm:gap-3">
             <div className="relative grid size-20 place-items-center sm:size-24">
               <span
