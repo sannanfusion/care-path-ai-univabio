@@ -321,8 +321,8 @@ export function VoiceConsult({
         });
         if (!response.ok) throw new Error(await response.text());
         const url = URL.createObjectURL(await response.blob());
-        const audio = new Audio(url);
-        audioRef.current = audio;
+        const audio = getAudioEl();
+        audio.src = url;
         await new Promise<void>((resolve) => {
           const finish = () => {
             playbackDoneRef.current = null;
@@ -331,11 +331,15 @@ export function VoiceConsult({
           playbackDoneRef.current = finish;
           audio.onended = finish;
           audio.onerror = finish;
-          void audio.play().catch(() => resolve());
+          void audio.play().catch(() => {
+            setMessage("Tap “Repeat” to hear the reply out loud.");
+            resolve();
+          });
         });
         URL.revokeObjectURL(url);
       } catch {
         setMessage("The voice reply could not be played, but the answer is on screen.");
+
       } finally {
         speakingRef.current = false;
         if (!cancelled && !endedRef.current) {
