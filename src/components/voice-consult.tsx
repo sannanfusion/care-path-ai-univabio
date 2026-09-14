@@ -374,6 +374,7 @@ export function VoiceConsult({
 
   // Mic toggle only mutes the human microphone — the AI voice keeps playing.
   async function togglePause() {
+    await unlockAudio();
     const next = !paused;
     if (next) {
       pausedRef.current = true;
@@ -399,10 +400,10 @@ export function VoiceConsult({
   function toggleAgentMute() {
     const next = !agentMuted;
     setAgentMuted(next);
+    void unlockAudio();
     if (next) {
       audioRef.current?.pause();
       playbackDoneRef.current?.();
-      audioRef.current = null;
       speakingRef.current = false;
       if (status === "speaking") {
         resetUtterance();
@@ -415,12 +416,12 @@ export function VoiceConsult({
   function skipSpeech() {
     audioRef.current?.pause();
     playbackDoneRef.current?.();
-    audioRef.current = null;
     speakingRef.current = false;
     resetUtterance();
     captureRef.current = !paused;
     setStatus(paused ? "paused" : "listening");
   }
+
 
   const clock = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 
