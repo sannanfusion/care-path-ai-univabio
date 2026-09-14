@@ -126,12 +126,51 @@ export function VoiceConsult({
   const playbackDoneRef = useRef<(() => void) | null>(null);
   const spokenKeyRef = useRef(0);
   const endedRef = useRef(false);
+  const unlockedRef = useRef(false);
   const pausedRef = useRef(false);
   pausedRef.current = paused;
   const agentMutedRef = useRef(false);
   agentMutedRef.current = agentMuted;
   const onUserSpeechRef = useRef(onUserSpeech);
   onUserSpeechRef.current = onUserSpeech;
+
+  // iOS/Android only allow audio playback on elements first started during a user
+  // gesture, so reuse one element and prime it as soon as the call opens.
+  const getAudioEl = () => {
+    if (!audioRef.current) {
+      const el = document.createElement("audio");
+      el.setAttribute("playsinline", "true");
+      el.preload = "auto";
+      audioRef.current = el;
+    }
+    return audioRef.current;
+  };
+
+  const unlockAudio = useCallback(async () => {
+    try {
+      await ctxRef.current?.resume();
+    } catch {
+      /* ignore */
+    }
+    if (unlockedRef.current) return;
+    const el = getAudioEl();
+    try {
+      el.muted = true;
+      el.src =
+        "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA=";
+      await el.play();
+      el.pause();
+      el.muted = false;
+      unlockedRef.current = true;
+    } catch {
+      el.muted = false;
+    }
+  }, []);
+
+  useEffect(() => {
+    void unlockAudio();
+  }, [unlockAudio]);
+
 
   const resetUtterance = () => {
     chunksRef.current = [];
