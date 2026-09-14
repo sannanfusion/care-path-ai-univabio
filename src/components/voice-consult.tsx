@@ -126,12 +126,51 @@ export function VoiceConsult({
   const playbackDoneRef = useRef<(() => void) | null>(null);
   const spokenKeyRef = useRef(0);
   const endedRef = useRef(false);
+  const unlockedRef = useRef(false);
   const pausedRef = useRef(false);
   pausedRef.current = paused;
   const agentMutedRef = useRef(false);
   agentMutedRef.current = agentMuted;
   const onUserSpeechRef = useRef(onUserSpeech);
   onUserSpeechRef.current = onUserSpeech;
+
+  // iOS/Android only allow audio playback on elements first started during a user
+  // gesture, so reuse one element and prime it as soon as the call opens.
+  const getAudioEl = () => {
+    if (!audioRef.current) {
+      const el = document.createElement("audio");
+      el.setAttribute("playsinline", "true");
+      el.preload = "auto";
+      audioRef.current = el;
+    }
+    return audioRef.current;
+  };
+
+  const unlockAudio = useCallback(async () => {
+    try {
+      await ctxRef.current?.resume();
+    } catch {
+      /* ignore */
+    }
+    if (unlockedRef.current) return;
+    const el = getAudioEl();
+    try {
+      el.muted = true;
+      el.src =
+        "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA=";
+      await el.play();
+      el.pause();
+      el.muted = false;
+      unlockedRef.current = true;
+    } catch {
+      el.muted = false;
+    }
+  }, []);
+
+  useEffect(() => {
+    void unlockAudio();
+  }, [unlockAudio]);
+
 
   const resetUtterance = () => {
     chunksRef.current = [];
@@ -282,8 +321,8 @@ export function VoiceConsult({
         });
         if (!response.ok) throw new Error(await response.text());
         const url = URL.createObjectURL(await response.blob());
-        const audio = new Audio(url);
-        audioRef.current = audio;
+        const audio = getAudioEl();
+        audio.src = url;
         await new Promise<void>((resolve) => {
           const finish = () => {
             playbackDoneRef.current = null;
@@ -292,11 +331,15 @@ export function VoiceConsult({
           playbackDoneRef.current = finish;
           audio.onended = finish;
           audio.onerror = finish;
-          void audio.play().catch(() => resolve());
+          void audio.play().catch(() => {
+            setMessage("Tap “Repeat” to hear the reply out loud.");
+            resolve();
+          });
         });
         URL.revokeObjectURL(url);
       } catch {
         setMessage("The voice reply could not be played, but the answer is on screen.");
+
       } finally {
         speakingRef.current = false;
         if (!cancelled && !endedRef.current) {
@@ -331,6 +374,7 @@ export function VoiceConsult({
 
   // Mic toggle only mutes the human microphone — the AI voice keeps playing.
   async function togglePause() {
+    await unlockAudio();
     const next = !paused;
     if (next) {
       pausedRef.current = true;
@@ -356,10 +400,10 @@ export function VoiceConsult({
   function toggleAgentMute() {
     const next = !agentMuted;
     setAgentMuted(next);
+    void unlockAudio();
     if (next) {
       audioRef.current?.pause();
       playbackDoneRef.current?.();
-      audioRef.current = null;
       speakingRef.current = false;
       if (status === "speaking") {
         resetUtterance();
@@ -372,12 +416,12 @@ export function VoiceConsult({
   function skipSpeech() {
     audioRef.current?.pause();
     playbackDoneRef.current?.();
-    audioRef.current = null;
     speakingRef.current = false;
     resetUtterance();
     captureRef.current = !paused;
     setStatus(paused ? "paused" : "listening");
   }
+
 
   const clock = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 
@@ -491,8 +535,10 @@ export function VoiceConsult({
               <button
                 type="button"
                 onClick={() => {
+                  void unlockAudio();
                   setAgentMuted(false);
                   setReplayKey((k) => k + 1);
+
                 }}
                 disabled={!spokenReply.trim() || status === "speaking"}
                 className="focus-ring inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary disabled:opacity-40"
